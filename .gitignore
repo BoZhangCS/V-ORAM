@@ -1,0 +1,8 @@
+*.bin
+.idea
+venv
+*.pkl
+*.xml
+*.iml
+/data/tree_data
+/data/real_workloads

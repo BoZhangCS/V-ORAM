@@ -3,6 +3,8 @@
 V-ORAM is a versatile and adaptive ORAM framework with service transformation for dynamic workloads. This repository
 contains the V-ORAM prototype described in our forthcoming paper at USENIX Security 2025.
 
+Notably, `Full-version.pdf` is the full version of this paper and contains detailed proofs of our stated theorems.
+
 **WARNING**: This implementation is a conceptual prototype for academic research and does not fully meet practical
 security/performance requirements. It is NOT suitable for production use.
 

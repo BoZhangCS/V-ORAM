@@ -23,7 +23,7 @@ The implementation is open-sourced under the Apache v2 license ([Lisence](LICENS
 * [Figure 9](#figure-9) (100 compute-minutes)
 * [Figure 10](#figure-10) (<1 compute-minutes)
 * [Figure 11](#figure-11) (<1 compute-minutes)
-* [Table 3](#table-9) (<1 compute-minutes)
+* [Table 3](#table-3) (<1 compute-minutes)
 
 Our experiment does not require specialized cloud servers and can be evaluated on-premises. V-ORAM will generate storage
 files to store the data of the binary tree, so please ensure your computer has at least 90GB of free storage. The entire

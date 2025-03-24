@@ -1,3 +1,17 @@
+import os
+import pickle
+
+os.environ['PYTHONWARNINGS'] = 'ignore::UserWarning'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+import sys
+
+current_dir = os.path.dirname(__file__)
+parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
+sys.path.append(parent_dir)
+
+import argparse
+
 from copy import deepcopy
 from random import random, choice, sample, randint
 from os import urandom
@@ -7,6 +21,7 @@ from src.Path_ORAM import Path_ORAM
 from src.Ring_ORAM import Ring_ORAM
 from src.ConcurORAM import ConcurORAM
 from src.BTree import BTree, dummy_block
+from config import default_para as config
 
 
 class V_ORAM():
@@ -318,102 +333,66 @@ class V_ORAM():
         self.curr_ORAM = tmp_ORAM
 
 
+def main():
+    parser = argparse.ArgumentParser(description='Initialize a prototype of V-ORAM.')
+    parser.add_argument('-i', '--init', action='store_true', help='Initialize a V-ORAM according to config.py.')
+    parser.add_argument('-w', '--write', nargs=2, metavar=('address', 'data'), help='Write the data, followed by address and data value.')
+    parser.add_argument('-r', '--read', type=int, metavar='address', help='Write the data, followed by address and data value.')
+    parser.add_argument('-o', '--oram', type=str, help='Execute the operation by given ORAM.')
+    args = parser.parse_args()
+
+    if args.init:
+        print('Initializing V-ORAM ...')
+        maxStashSize = config.get('maxStashSize')
+        block_size = config.get('block_size')
+        bucket_size = config.get('bucket_size')
+        s_num = config.get('s_num')
+        a_num = config.get('a_num')
+        c_batch = config.get('c_batch')
+        height = config.get('V_ORAM_height')
+        v_oram = V_ORAM(height=height, bucket_size=bucket_size, block_size=block_size, s_num=s_num, a_num=a_num,
+                        c_batch=c_batch, maxStashSize=maxStashSize)
+        print(f'\tV-ORAM initialized with height = {height}.')
+
+        print(f'Saving V-ORAM to v_oram.pkl ...')
+        with open('v_oram.pkl', 'wb') as f:
+            pickle.dump(v_oram, f)
+        print('\tV-ORAM saved successfully.')
+
+    if os.path.exists('v_oram.pkl'):
+        with open('v_oram.pkl', 'rb') as f:
+            v_oram = pickle.load(f)
+    else:
+        print(f'v_oram.pkl not found. Please initialize V-ORAM using the --init option.')
+        return
+
+    if args.oram:
+        target_service = args.oram
+        print(f'ORAM service changes to {target_service}.')
+    else:
+        target_service = v_oram.curr_service
+
+    if args.write:
+        address = int(args.write[0])
+        data = args.write[1].encode('utf-8')
+        # Processing data here, change here if you want to customize data type.
+        if len(data) > v_oram.block_size:
+            data = data[:v_oram.block_size]
+        else:
+            data = data.ljust(v_oram.block_size, b'\0')
+        v_oram.access('write', address, data, target_service)
+
+
+    if args.read:
+        address = int(args.read)
+        data, _ = v_oram.access('read', address, urandom(v_oram.block_size), target_service)
+        data = data.rstrip(b'\0')
+        print(f"Data at address {address}: {data}")
+
+    if not args.init:
+        with open('v_oram.pkl', 'wb') as f:
+            pickle.dump(v_oram, f)
+
+
 if __name__ == '__main__':
-    test_factor = 10
-    total_periods = 8
-    oram_height = 10
-    c_batch = 8
-    v_oram = V_ORAM(oram_height)
-    p_map = v_oram.curr_ORAM.position_map
-
-    stash_count = {}
-    bucket_load = [0 for _ in range(oram_height)]
-    real_datasets = {}
-    for _ in range(total_periods):
-        if _ % 3 == 0:
-            sid = 'concur'
-        elif _ % 3 == 1:
-            sid = 'ring'
-        else:
-            sid = 'path'
-
-        if sid != 'concur':
-            for i in range(2 ** test_factor):
-                if random() < 0.5:
-                    address = randint(0, len(v_oram.curr_ORAM.position_map) - 1)
-                    data = dummy_block(4096)
-                    v_oram.access('write', address, data, sid)
-                    real_datasets[address] = data
-                else:
-                    if len(real_datasets) == 0:
-                        i -= 1
-                        continue
-                    address = choice(list(real_datasets.keys()))
-                    data = real_datasets[address]
-                    result, _ = v_oram.access('read', address, urandom(4096), sid)
-                    assert (result == data)
-        else:
-            batch_requests = []
-            test_num = 2 ** test_factor
-            for i in range(test_num):
-                if random() < 0.5:
-                    address = randint(0, len(p_map) - 1)
-                    data = dummy_block(v_oram.block_size)
-                    real_datasets[address] = data
-                    batch_requests.append(('write', address, data))
-                    results, _ = v_oram.access('write', address, data, 'concur')
-                else:
-                    if len(real_datasets) == 0:
-                        continue
-                    address = choice(list(real_datasets.keys()))
-                    real = real_datasets[address]
-                    dummy = dummy_block(v_oram.block_size)
-                    batch_requests.append(('read', address, real))
-                    results, _ = v_oram.access('read', address, dummy, 'concur')
-
-                # Padding the requests
-                if i == test_num - 1 and len(batch_requests) < c_batch:
-                    while len(batch_requests) < c_batch:
-                        address = choice(list(real_datasets.keys()))
-                        real = real_datasets[address]
-                        dummy = dummy_block(v_oram.block_size)
-                        batch_requests.append(('read', address, real))
-                        results, _ = v_oram.access('read', address, dummy, 'concur')
-                    batch_requests = []
-
-                if len(batch_requests) == c_batch:
-                    for jj in range(c_batch):
-                        op, add, data = batch_requests[jj]
-                        if op == 'read':
-                            try:
-                                assert data == results[jj]
-                            except Exception as e:
-                                raise Exception(f"Error:\tresult:\t {add}:{results[jj]}\n"
-                                                f"real:\t{data}")
-                    batch_requests = []
-                if hasattr(v_oram.curr_ORAM, 'union_size'):
-                    if v_oram.curr_ORAM.union_size in stash_count.keys():
-                        stash_count[v_oram.curr_ORAM.union_size] += 1
-                    else:
-                        stash_count[v_oram.curr_ORAM.union_size] = 1
-
-                if hasattr(v_oram.curr_ORAM, 'stash'):
-                    if len(v_oram.curr_ORAM.stash) in stash_count.keys():
-                        stash_count[len(v_oram.curr_ORAM.stash)] += 1
-                    else:
-                        stash_count[len(v_oram.curr_ORAM.stash)] = 1
-
-        for i in range(oram_height):
-            cnt = 0
-            for bios in range(2 ** i):
-                id = 2 ** i + bios - 1
-                cnt += v_oram.curr_ORAM.address_map[id].count(-1)
-            bucket_load[i] = 1 - cnt / (2 ** i * v_oram.bucket_size)
-    if hasattr(v_oram.curr_ORAM, 'stash'):
-        print(len(v_oram.curr_ORAM.stash))
-        for add, data in v_oram.curr_ORAM.stash.items():
-            print(add, data[:4].hex())
-        print(stash_count)
-    elif hasattr(v_oram.curr_ORAM, 'union_size'):
-        print(v_oram.curr_ORAM.union_size)
-    print(bucket_load)
+    main()

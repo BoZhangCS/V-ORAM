@@ -17,6 +17,7 @@ default_para = {
         "mathtext.fontset": 'stix',
         "font.serif": ['Times New Roman'],
     },
+    "V_ORAM_height": 20,
     "tree_data_dir": 'data/tree_data/',
     "output_dir": 'artifacts/outputs/',
     "paper_data_dir": 'artifacts/paper_data/',

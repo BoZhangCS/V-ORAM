@@ -30,7 +30,7 @@ files to store the data of the binary tree, so please ensure your computer has a
 The RAM usage is roughly estimated based on the RAM usage of the Python process in the Activity Monitor built-in macOS. 
 We recommend equip the machine with at least **16 GB** of RAM to prevent the system from automatically killing processes. (Our machine is macOS Sequoia 15.3.2, with 512 GB storage, and 16 GB RAM).
 
-The entire artifact evaluation takes about **20 min** for installation and **2 hr** for computation.
+The entire artifact evaluation takes about **20 min** for installation and **30 min** for computation.
 
 The tree structure of the project is as follows:
 
@@ -60,10 +60,14 @@ V-ORAM
 └── LICENSE
 ```
 
-The prototypes of V-ORAM and three selected ORAMs are located in the `~/V-ORAM/src/`. Real-world datasets and generated
-storage files are stored in the `~/V-ORAM/data/` .
+The prototypes of V-ORAM and three selected ORAMs are located in the `~/V-ORAM/src/`.
+Real-world datasets and generated storage files are stored in the `~/V-ORAM/data/` .
+To ensure the correctness of V-ORAM and three ORAMs, we provide some read/write tests located in the `~/V-ORAM/test/`. 
+The links to the papers for the three ORAMs implemented are as follows:
 
-To ensure the correctness of V-ORAM and three ORAMs, we provide some read/write tests located in the `~/V-ORAM/test/`.
+* Path ORAM: https://eprint.iacr.org/2013/280.pdf
+* Ring ORAM: https://www.usenix.org/system/files/conference/usenixsecurity15/sec15-paper-ren-ling.pdf
+* ConcurORAM: https://www.ndss-symposium.org/wp-content/uploads/2019/02/ndss2019_07B-2_Chakraborti_paper.pdf
 
 Files related to this artifact evaluations are in the `~/V-ORAM/artifacts/`, including experimental data and resultant
 figures in the paper. All generated results are saved as `.csv` files, and figures are saved as PDFs in
@@ -87,7 +91,7 @@ should resolve the issue.)
 
 * We recommend editing the corresponding Python files if you want to modify experiment settings. However, this may
   result in unpredictable changes to the figure layout.
-* All the provided commands are rooted at `~/V-ORAM/`.s
+* All the provided commands are rooted at `~/V-ORAM/`.
 
 ## Installation
 
@@ -302,3 +306,31 @@ sizes, and communication blowups under Ring ORAM.
 	
 		The detailed code of getting ChestX-ray8 and COVIDx statistics is ommited here
 
+# Using V-ORAM
+
+Besides the artifact evaluations, we also provide a simple V-ORAM command-line method to use V-ORAM directly. Concretely:
+
+
+* `-i` Initialize a V-ORAM instance based on the parameter settings in config.py. The generated V-ORAM will be saved into ``v_oram.pkl`` in the current direction.
+* `-w` performs a write operation on the V-ORAM instance. The address and data value are required. The address is an integer between 0 and maximum block index N, and the data value is a string.
+* `-r` performs a read operation on the V-ORAM instance. The address is required and the instance returns the result.
+* `-o` specifies the ORAM type to be used. The available options are `ring`, `path`, and `concur`. The ORAM type is `ring` from the start and changes if the client inputs another ORAM type.
+
+The following is a simple use case:
+
+```sh
+> python3 ./src/V_ORAM.py -i
+Initializing V-ORAM ...
+	V-ORAM initialized with height = 20.
+Saving V-ORAM to v_oram.pkl ...
+	V-ORAM saved successfully.
+> python3 ./src/V_ORAM.py -w 10 'Hello, V-ORAM!'
+> python3 ./src/V_ORAM.py -r 10
+Data at address 10: b'Hello, V-ORAM!'
+> python3 ./src/V_ORAM.py -w 10 'Hello, Path ORAM' -o path
+ORAM service changes to path.
+> python3 ./src/V_ORAM.py -r 10
+Data at address 10: b'Hello, Path ORAM'
+```
+
+**NOTE**: The above example provides a basic demonstration of V-ORAM. For simplicity, we use `pickle` to store the instance directly, which introduces additional time overhead. This overhead is **NOT** included in the evaluations presented in our paper. Furthermore, we emphasize that our implementation is **NOT** ready for practical use, as it lacks full security at the code level.

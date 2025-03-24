@@ -1,4 +1,7 @@
 # Structure to store access information
+# _sync: synchronous operations
+# _async: asynchronous operations
+# evict_record_flag: flag to indicate if the current evict invokes our EvictRecord
 class AccessInfo:
     def __init__(self, down_sync=0, down_async=0, up_sync=0, up_async=0, rtt_sync=0, rtt_async=0,
                  evict_record_flag=False):

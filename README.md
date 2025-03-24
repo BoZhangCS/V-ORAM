@@ -16,8 +16,8 @@ The implementation is open-sourced under the Apache v2 license ([Lisence](LICENS
 
 * [Installation](#installation)
 * [Figure 4](#figure-4) (<1 compute-minutes)
-* [Figure 5](#figure-5) (10 compute-minutes)
-* [Figure 6](#figure-6) (5 compute-minutes)
+* [Figure 5](#figure-5) (10 compute-minutes, 90 GB disk, 4 GB RAM)
+* [Figure 6](#figure-6) (5 compute-minutes, 90 GB disk, 5 GB RAM)
 * [Figure 7](#figure-7) (<1 compute-minutes)
 * [Figure 8](#figure-8) (<1 compute-minutes)
 * [Figure 9](#figure-9) (100 compute-minutes)
@@ -26,8 +26,39 @@ The implementation is open-sourced under the Apache v2 license ([Lisence](LICENS
 * [Table 3](#table-3) (<1 compute-minutes)
 
 Our experiment does not require specialized cloud servers and can be evaluated on-premises. V-ORAM will generate storage
-files to store the data of the binary tree, so please ensure your computer has at least 90GB of free storage. The entire
-artifact evaluation takes about 20 min for installation and 2 hr for computation.
+files to store the data of the binary tree, so please ensure your computer has at least **90 GB** of free storage. 
+The RAM usage is roughly estimated using the Activity Monitor that comes with macOS. 
+We recommend equip the machine with at least **32 GB** of RAM to prevent the system from automatically killing processes.
+
+The entire artifact evaluation takes about **20 min** for installation and **2 hr** for computation.
+
+The tree structure of the project is as follows:
+
+```sh
+V-ORAM
+├── src                 # The prototypes of V-ORAM and three selected ORAMs
+│   ├── data/
+│   ├── AccessInfo.py
+│   ├── BTree.py
+│   ├── ConcurORAM.py
+│   ├── Path_ORAM.py
+│   ├── Ring_ORAM.py
+│   ├── V_ORAM.py
+│   └── utils.py
+├── data                # Real-world datasets and generated storage files
+│   └── real_workloads.zip
+├── test/               # Read/write tests
+├── artifacts           # Scripts used in this artifact evaluations
+│   ├── outputs/
+│   ├── paper_data/
+│   ├── paper_figs/
+│   └── FigXX_fig_scripts.py
+├── requirements.txt
+├── README.md
+├── config.py
+├── Full-version.pdf
+└── LICENSE
+```
 
 The prototypes of V-ORAM and three selected ORAMs are located in the `~/V-ORAM/src/`. Real-world datasets and generated
 storage files are stored in the `~/V-ORAM/data/` .
@@ -62,7 +93,13 @@ should resolve the issue.)
 
 After cloning this repository, you need to:
 
-1. Set up the environments. We use `Python 3.8` as the runtime environment. Additionally, please execute the following
+1. Check if there is sufficient storage space in the current directory. We recommend keeping at least 90GB of free space.
+
+   ```sh
+   df -h .
+   ```
+
+2. Set up the environments. We use `Python 3.8` as the runtime environment. Additionally, please execute the following
    command to install the necessary dependencies:
 
    ```sh
@@ -72,7 +109,7 @@ After cloning this repository, you need to:
    pip3 install -r requirements.txt
    ```
 
-2. Unzip the datasets. The stripped datasets we use can be found in `~V-ORAM/data/real_workloads.zip`. You can extract
+3. Unzip the datasets. The stripped datasets we use can be found in `~V-ORAM/data/real_workloads.zip`. You can extract
    them using the following command:
    ```shell
    cd ./data
@@ -94,7 +131,7 @@ After cloning this repository, you need to:
    * We only provide statistics for two medical image datasets to estimate the ORAM parameter settings. The complete
      datasets are not included in this evaluation. This does not affect the artifacts' integrity and correctness.
 
-3. Run tests. We recommend reviewers execute all tests in the `~/V-ORAM/test/` before starting the evaluations.
+4. Run tests. We recommend reviewers execute all tests in the `~/V-ORAM/test/` before starting the evaluations. The required dependency `pytest` is already installed in the previous step.
 
    ```sh
    pytest		# <1 min

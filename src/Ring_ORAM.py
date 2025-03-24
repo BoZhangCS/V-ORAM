@@ -7,7 +7,47 @@ from src.BTree import BTree, dummy_block
 
 
 class Ring_ORAM(BTree):
+    """
+    A Ring ORAM (Oblivious RAM) implementation that extends the BTree class.
 
+    Attributes:
+        dummy_blocks (list): List of dummy blocks for each level of the tree.
+        s_num (int): Number of dummy blocks in each bucket.
+        a_num (int): Number of constant A in Ring ORAM, evict_path is invoked for every A accesses.
+        leaf_num (int): Number of leaves in the ORAM tree.
+        bucket_size (int): Size of each bucket.
+        stash (dict): Dictionary to store the client cached blocks.
+        position_map (dict): Dictionary mapping block addresses to its leaf indices.
+        address_map (dict): Dictionary mapping bucket positions to its address.
+        round (int): Current round of operations.
+        big_g (int): Global counter for evictions.
+        count (dict): Dictionary to count accesses to each bucket.
+        read_buckets (list): List to record the buckets read during accesses.
+        evicted_buckets (list): List to record the buckets evicted during accesses.
+        info (AccessInfo): Object to record access information for evaluation.
+
+    Methods:
+        __init__(height, bucket_size=8, block_size=4096, s_num=12, a_num=8):
+            Initializes the Ring_ORAM instance with the given parameters.
+
+        build_position_map():
+            Builds the position map and address map for the ORAM tree.
+
+        evict_path():
+            Evicts blocks from the stash to the ORAM tree.
+
+        _write_bucket(position, i):
+            Writes blocks from the stash to a specific bucket.
+
+        early_reshuffle(l):
+            Performs an early reshuffle for a given leaf ID.
+
+        read_ring_path(l, address):
+            Reads the ring path for a given leaf ID and address.
+
+        access(op, address, data_prime):
+            Performs an access operation (read or write) on the ORAM tree.
+    """
     def __init__(self, height, bucket_size=8, block_size=4096, s_num=12, a_num=8):
         super().__init__(height, bucket_size=bucket_size + s_num, block_size=block_size)
         self.dummy_blocks = [dummy_block(self.block_size) for _ in range(self.height)]

@@ -16,6 +16,7 @@ global_dummies = {
 }
 
 
+# Generate dummy data with block_size
 def dummy_block(block_size=4096):
     if block_size in global_dummies.keys():
         return global_dummies[block_size]
@@ -23,7 +24,7 @@ def dummy_block(block_size=4096):
         global_dummies[block_size] = urandom(block_size)
         return urandom(block_size)
 
-
+# Convert data to string for debugging
 def _data_str(data):
     if type(data) == bytes:
         return data[:4].hex()
@@ -32,6 +33,8 @@ def _data_str(data):
 
 
 # Buckets are stored in files in /data/tree_data/
+# We store the data in binary files, which with a fixed size.
+# The blocks are stored in the files in a sequential manner.
 class Bucket:
     def __init__(self, size=None, block_size=4096, bucket_id=None):
         self.size = size if size else 4
@@ -61,7 +64,8 @@ class Bucket:
             f.write(block)
 
 
-# Binary tree
+# Binary tree with each node as a bucket
+# The tree is stored in layers, with each layer as an array of buckets
 class BTree:
     def __init__(self, height, address_size=None, block_size=None, bucket_size=None):
         self.height = height
@@ -100,6 +104,7 @@ class BTree:
             print('\n')
         print()
 
+    # Read the path from the leaf to the root
     def read_path(self, leaf_ind):
         path = []
         layer_ind = self.height - 1
@@ -123,8 +128,9 @@ class BTree:
             raise Exception("Invalid position")
         return layer_ind, layer_bios
 
+    # Get the position of the leaf at certain layer
+    # Position is defined as the index of the bucket, from 0 to 2^height - 1
     def get_position(self, leaf, layer):
-        # layer是从根节点向下数的层数
         leaf_position = 2 ** (self.height - 1) + leaf - 1
         tmp = self.height - 1 - layer
         while tmp:
@@ -145,6 +151,7 @@ class BTree:
         max_leaf = max_leaf - 2 ** (height - 1) + 1
         return min_leaf, max_leaf
 
+    # Determine the evicted path for give G, this is used for RingORAM and ConcurORAM
     def g_to_l(self, big_g):
         tmp_l = big_g % (2 ** (self.height - 1))
         l = 0

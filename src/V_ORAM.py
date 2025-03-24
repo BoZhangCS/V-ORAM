@@ -10,6 +10,60 @@ from src.BTree import BTree, dummy_block
 
 
 class V_ORAM():
+    """
+    A V-ORAM implementation that supports Path ORAM, Ring ORAM and ConcurORAM.
+
+    Attributes:
+        SUPPORTED_SIDS (list): List of supported service identifiers.
+        KEY_LEN (int): Length of the encryption key.
+        maxStashSize (int): Maximum size of the stash.
+        height (int): Height of the ORAM tree.
+        bucket_size (int): Size of each bucket.
+        block_size (int): Size of each block.
+        s_num (int): Number of dummy blocks in each bucket.
+        a_num (int): Number of accesses in each batch.
+        c_batch (int): Number of concurrent batches.
+        curr_ORAM (Ring_ORAM): Current ORAM instance, set to Ring ORAM (our base ORAM) at first.
+        dummy_blocks (list): List of dummy blocks.
+        record_map (dict): Dictionary of Record Map in our paper.
+        curr_service (str): Current service type.
+        curr_limit (int): Current access limit for each buckets in the ORAM.
+        request_cache_for_concur (list): Cache for concurrent requests.
+        limits (dict): Dictionary of limits for each service type.
+        curr_info (AccessInfo): Current access information.
+        pre_info (AccessInfo): Previous access information.
+
+    Methods:
+        __init__(height, bucket_size=8, block_size=4096, s_num=12, a_num=8, c_batch=8, maxStashSize=62):
+            Initializes the V-ORAM instance with the given parameters.
+
+        get_access_info():
+            Returns the access information for the current period.
+
+        _write_bucket(position, i):
+            Writes blocks from the stash to a specific bucket.
+
+        evictRecord(read_buckets):
+            Perform Evict Record in our paper.
+
+        access(op, address, data_prime, sid):
+            Performs an access operation (read or write) on the ORAM tree.
+
+        switch_to(service_type):
+            Switches the current ORAM service to the specified type.
+
+        path_to_ring():
+            Converts the current Path ORAM to a Ring ORAM.
+
+        ring_to_path():
+            Converts the current Ring ORAM to a Path ORAM.
+
+        concur_to_ring():
+            Converts the current ConcurORAM to a Ring ORAM.
+
+        ring_to_concur():
+            Converts the current Ring ORAM to a ConcurORAM.
+    """
     SUPPORTED_SIDS = [
         'path',
         'ring',

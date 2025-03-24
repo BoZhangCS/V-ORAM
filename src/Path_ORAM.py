@@ -5,9 +5,34 @@ from src.AccessInfo import AccessInfo
 from src.BTree import BTree, dummy_block
 from os import urandom
 
-
 class Path_ORAM(BTree):
+    """
+    A Path ORAM (Oblivious RAM) implementation that extends the BTree class.
 
+    Attributes:
+        leaf_num (int): Number of leaves in the ORAM tree.
+        stash (dict): A dictionary that stores the client cached blocks.
+        position_map (dict): A dictionary that maps the block address to its leaf index.
+        address_map (dict): A dictionary that maps the block location on the tree to its address.
+        read_buckets (list): A list used to record the buckets read during access.
+        evicted_buckets (list): A list used to record the buckets evicted during access.
+        info (AccessInfo): An object used to record access information for evaluation.
+
+    Methods:
+        __init__(height, bucket_size=8, block_size=4096, no_map=False):
+            Initializes the Path_ORAM instance with the given parameters.
+
+        build_position_map():
+            Initialize the position map and address map for the ORAM tree.
+            For position map, -1 denotes un-accessed blocks, otherwise, the leaf index of the block.
+            For address map, -1 denotes un-accessed blocks, otherwise, the address of the block.
+
+        access(op, address, data):
+            Performs an access operation (read or write) on the ORAM tree.
+
+        eviction(x):
+            Evicts blocks from the stash to the ORAM tree.
+    """
     def __init__(self, height, bucket_size=8, block_size=4096, no_map=False):
         super().__init__(height, bucket_size=bucket_size, block_size=block_size)
         self.leaf_num = 2 ** (self.height - 1)
@@ -15,11 +40,11 @@ class Path_ORAM(BTree):
         self.position_map = {}  # position map in paper, address to leaf index
         self.address_map = {}  # from block location to address list
 
-        # This part is used for record map
+        # This part is used for record map, the buckets being read and evicted in this access
         self.read_buckets = []
         self.evicted_buckets = []
 
-        # For eval
+        # For evaluation
         self.info = AccessInfo()
 
         if not no_map:
@@ -80,6 +105,7 @@ class Path_ORAM(BTree):
         # Eviction
         tmp_position = 2 ** (self.height - 1) + x - 1
         for l in range(self.height - 1, -1, -1):
+            # Randomly select the block from stash
             tmp_stash = {}
             min_leaf, max_leaf = super().get_leave_range(tmp_position, self.height)
             for address, block in self.stash.items():

@@ -9,7 +9,86 @@ from src.BTree import BTree, dummy_block, _data_str
 
 
 class ConcurORAM(BTree):
+    """
+    A ConcurORAM (Concurrent Oblivious RAM) implementation that extends the BTree class.
 
+    Attributes:
+        union_size (int): Size of the union of in ConcurORAM paper, denotes the blocks should be evicted back.
+        no_map (bool): Flag indicating whether to use a position map, used for evaluation.
+        s_num (int): Number of dummy blocks in each bucket.
+        a_num (int): Number of accesses in each batch.
+        count (dict): Dictionary to count accesses to each bucket.
+        dummy_blocks (list): List of dummy blocks for each level of the tree.
+        leaf_num (int): Number of leaves in the ORAM tree.
+        position_map (dict): Dictionary mapping block addresses to its leaf indices.
+        address_map (dict): Dictionary mapping bucket positions to its address.
+        bucket_size (int): Number of blocks in each bucket.
+        c_batch (int): Sie of concurrent batches.
+        maxStashSize (int): Maximum size of the stash.
+        big_g (int): Global counter for evictions.
+        queryLog (list): List to log queries.
+        evictionLog (list): List to log evictions.
+        eviction_id (int): ID of the current eviction.
+        eviction_id_cache (list): Cache for eviction IDs.
+        StashSet (List[list]): List of stashes for each batch.
+        curr_stash (dict): Current stash of blocks.
+        stash_valid (list): List indicating the validity of stashes.
+        curr_DRL (dict): Current Data Record Log.
+        DR_LogSet (List[list]): List of Data Record Logs for each batch.
+        DRL_valid (list): List indicating the validity of Data Record Logs.
+        round (int): Current round of operations.
+        tempStashSet (List[list]): Temporary stash set for each batch.
+        info (AccessInfo): Object to record access information for evaluation.
+
+    Methods:
+        __init__(height, bucket_size=8, block_size=4096, c_batch=4, maxStashSize=62, a_num=8, s_num=4, no_map=False):
+            Initializes the ConcurORAM instance with the given parameters.
+
+        init_logs():
+            Initializes the logs for the ORAM.
+
+        print():
+            Prints the current state of the ORAM.
+
+        build_position_map():
+            Builds the position map and address map for the ORAM tree.
+
+        read_log_set(address):
+            Reads the log set for a given address.
+
+        write_log_set(_block):
+            Writes a block to the log set.
+
+        read_stash_set():
+            Reads the stash set.
+
+        readEST(k, leaf_id):
+            Reads the EST (Eviction Set Tree) for a given leaf ID.
+
+        prepare_evict_process():
+            Prepares the data for evictions and commits eviction when there are c_batch requests.
+
+        evict_to_path(path, tempStash_i_1, leaf_id):
+            Evicts blocks to the path.
+
+        evict_batch_commit():
+            Commits the batch eviction.
+
+        read_concur_path(leaf_id):
+            Reads the concurrent path for a given leaf ID.
+
+        early_reshuffle(leaf_id):
+            Performs an early reshuffle for a given leaf ID.
+
+        add_record_map(record_map):
+            Adds a record map to the ORAM.
+
+        access(batch_requests):
+            Performs access operations (read or write) on the ORAM tree.
+
+        print_meta():
+            Prints the metadata of the ORAM.
+        """
     def __init__(self, height, bucket_size=8, block_size=4096, c_batch=4, maxStashSize=62, a_num=8, s_num=4,
                  no_map=False):
         super().__init__(height, bucket_size=bucket_size + s_num, block_size=block_size)

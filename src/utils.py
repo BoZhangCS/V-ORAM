@@ -15,6 +15,7 @@ BLOCK_SIZE = 4096
 
 output_dir = config['output_dir']
 
+# Pseudo Random Function used for generating service ID or secret key
 def PRF(seed):
     if type(seed) == str:
         return sha256(seed.encode('utf8')).digest()
@@ -36,19 +37,6 @@ def XOR_blocks(blocks):
     return result
 
 
-def XOR_blocks_async(blocks, simulator):
-    core_num = simulator.core_num
-    remainder = len(blocks) % core_num
-    num = len(blocks) // core_num
-    split_blocks = []
-    for i in range(core_num):
-        split_blocks.append((blocks[i * num: (i + 1) * num],))
-    if remainder != 0:
-        split_blocks.append((blocks[-remainder:],))
-    result = simulator.process(XOR_blocks, split_blocks)
-    return XOR_blocks(result)
-
-
 def Encrypt(key_bytes, bytes):
     myCipher = AES.new(key_bytes, AES.MODE_CTR)
     encrypted = myCipher.encrypt(bytes)
@@ -63,7 +51,7 @@ def Decrypt(key_bytes, bytes):
     decrypted = myCipher.decrypt(cipher_text)
     return decrypted
 
-
+# Encoder class for encoding and decoding data, basically includes all above functions
 class Encoder():
     supported_sids = {
         PRF('path'): 'path',

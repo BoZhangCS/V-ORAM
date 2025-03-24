@@ -4,3 +4,4 @@ numpy~=1.24.4
 tqdm~=4.66.5
 pycryptodome~=3.20.0
 pycryptodomex~=3.20.0
+pytest

@@ -28,7 +28,7 @@ class TestPathORAM(unittest.TestCase):
         # print(self.path_oram.stash.keys())
         for i in range(self.repeat):
             if random.random() < 0.5:
-                address = random.choice(list(self.path_oram.position_map.keys()))
+                address = random.randint(0, len(self.p_map) - 1)
                 data = urandom(4096)
                 self.path_oram.access('write', address, data)
                 self.real_datasets[address] = data

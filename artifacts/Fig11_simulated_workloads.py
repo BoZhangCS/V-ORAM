@@ -17,7 +17,7 @@ import time
 import pandas as pd
 from os import urandom
 from pandas import DataFrame
-from random import choice, random
+from random import choice, random, randint
 
 from src.utils import Encoder
 from src.V_ORAM import V_ORAM
@@ -68,7 +68,7 @@ def getWorkload(workload_period, height=10, **input_config):
         for i in range(access_num):
             if sid != 'concur':
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = urandom(block_size)
                     _, info = v_oram.access('write', address, data, sid)
                     real_datasets[address] = data
@@ -98,7 +98,7 @@ def getWorkload(workload_period, height=10, **input_config):
             else:
                 # Concur is measured by c_batch ** 2 access average
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = urandom(block_size)
                     real_datasets[address] = data
                     batch_requests.append(('write', address, data))

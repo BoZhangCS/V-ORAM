@@ -11,7 +11,7 @@ from src.BTree import BTree, dummy_block
 
 class V_ORAM():
     """
-    A V-ORAM implementation that supports Path ORAM, Ring ORAM and ConcurORAM.
+    A V-ORAM implementation that supports multiple ORAM schemes.
 
     Attributes:
         SUPPORTED_SIDS (list): List of supported service identifiers.
@@ -23,11 +23,11 @@ class V_ORAM():
         s_num (int): Number of dummy blocks in each bucket.
         a_num (int): Number of accesses in each batch.
         c_batch (int): Number of concurrent batches.
-        curr_ORAM (Ring_ORAM): Current ORAM instance, set to Ring ORAM (our base ORAM) at first.
+        curr_ORAM (Ring_ORAM): Current ORAM instance.
         dummy_blocks (list): List of dummy blocks.
-        record_map (dict): Dictionary of Record Map in our paper.
+        record_map (dict): Dictionary to record access counts for each bucket.
         curr_service (str): Current service type.
-        curr_limit (int): Current access limit for each buckets in the ORAM.
+        curr_limit (int): Current limit for the number of slots in the ORAM.
         request_cache_for_concur (list): Cache for concurrent requests.
         limits (dict): Dictionary of limits for each service type.
         curr_info (AccessInfo): Current access information.
@@ -44,7 +44,7 @@ class V_ORAM():
             Writes blocks from the stash to a specific bucket.
 
         evictRecord(read_buckets):
-            Perform Evict Record in our paper.
+            Evicts records from the read buckets.
 
         access(op, address, data_prime, sid):
             Performs an access operation (read or write) on the ORAM tree.
@@ -288,7 +288,7 @@ class V_ORAM():
             curr_tempStash = self.curr_ORAM.StashSet[(curr_len - 1) % self.c_batch]
             for j in range(self.maxStashSize):
                 add, block = curr_tempStash[j]
-                if add in position_map.keys() and position_map[add] != -1:
+                if add < len(position_map) and position_map[add] != -1:
                     tmp_stash[add] = block
 
         tmp_ORAM = Ring_ORAM(self.height, self.bucket_size, self.block_size, self.s_num, self.a_num)
@@ -340,7 +340,7 @@ if __name__ == '__main__':
         if sid != 'concur':
             for i in range(2 ** test_factor):
                 if random() < 0.5:
-                    address = choice(list(v_oram.curr_ORAM.position_map.keys()))
+                    address = randint(0, len(v_oram.curr_ORAM.position_map) - 1)
                     data = dummy_block(4096)
                     v_oram.access('write', address, data, sid)
                     real_datasets[address] = data
@@ -357,7 +357,7 @@ if __name__ == '__main__':
             test_num = 2 ** test_factor
             for i in range(test_num):
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = dummy_block(v_oram.block_size)
                     real_datasets[address] = data
                     batch_requests.append(('write', address, data))

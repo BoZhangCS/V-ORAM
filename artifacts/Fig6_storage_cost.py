@@ -17,7 +17,7 @@ from math import log2
 from os import urandom
 import matplotlib.pyplot as plt
 from matplotlib import rcParams, gridspec
-from random import random, choice
+from random import random, choice, randint
 from config import default_para as config
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 
@@ -47,7 +47,7 @@ def prepare_csv(height_list):
             for i in range(test_interval):
                 p_map = path_oram.position_map
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = urandom(block_size)
                     path_oram.access('write', address, data)
                     real_datasets[address] = data
@@ -69,7 +69,7 @@ def prepare_csv(height_list):
             for i in range(test_interval):
                 p_map = ring_oram.position_map
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = urandom(block_size)
                     ring_oram.access('write', address, data)
                     real_datasets[address] = data
@@ -95,7 +95,7 @@ def prepare_csv(height_list):
                 batch_requests = []
                 while len(batch_requests) < c_batch:
                     if random() < 0.5:
-                        address = choice(list(p_map.keys()))
+                        address = randint(0, len(p_map) - 1)
                         data = urandom(block_size)
                         real_datasets[address] = data
                         batch_requests.append(('write', address, data))

@@ -5,7 +5,7 @@ parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(parent_dir)
 
 import unittest
-from random import random, choice
+from random import random, choice, randint
 from src.V_ORAM import V_ORAM
 from src.BTree import BLOCK_SIZE
 from os import urandom
@@ -36,7 +36,7 @@ class TestOST_Ring_Path(unittest.TestCase):
                 sid = 'ring'
             for i in range(self.repeat):
                 if random() < 0.5:
-                    address = choice(list(self.v_oram.curr_ORAM.position_map.keys()))
+                    address = randint(0, len(self.v_oram.curr_ORAM.position_map) - 1)
                     data = urandom(BLOCK_SIZE)
                     self.v_oram.access('write', address, data, sid)
                     real_datasets[address] = data

@@ -1,6 +1,8 @@
 from copy import deepcopy
 from random import randint, sample, random, choice
 
+import numpy as np
+
 from src.AccessInfo import AccessInfo
 from src.BTree import BTree, dummy_block
 from os import urandom
@@ -37,8 +39,8 @@ class Path_ORAM(BTree):
         super().__init__(height, bucket_size=bucket_size, block_size=block_size)
         self.leaf_num = 2 ** (self.height - 1)
         self.stash = {}
-        self.position_map = {}  # position map in paper, address to leaf index
-        self.address_map = {}  # from block location to address list
+        self.position_map = None  # position map in paper, address to leaf index
+        self.address_map = None  # from block location to address list
 
         # This part is used for record map, the buckets being read and evicted in this access
         self.read_buckets = []
@@ -51,12 +53,8 @@ class Path_ORAM(BTree):
             self.build_position_map()
 
     def build_position_map(self):
-        for id in range(2 ** (self.height - 1) * self.bucket_size):
-            _address = urandom(16).hex()
-            self.position_map[_address] = -1
-
-        for position in range(2 ** self.height - 1):
-            self.address_map[position] = [-1] * self.bucket_size
+        self.position_map = np.full((2 ** (self.height - 1) * self.bucket_size,), -1, dtype=int)
+        self.address_map = np.full((2 ** self.height - 1, self.bucket_size), -1, dtype=int)
 
     def access(self, op, address, data):
         self.read_buckets = []

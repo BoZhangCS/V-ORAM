@@ -2,6 +2,8 @@ from copy import deepcopy
 from os import urandom
 from random import randint, choice, sample, random
 
+import numpy as np
+
 from src.AccessInfo import AccessInfo
 from src.BTree import BTree, dummy_block
 
@@ -48,6 +50,7 @@ class Ring_ORAM(BTree):
         access(op, address, data_prime):
             Performs an access operation (read or write) on the ORAM tree.
     """
+
     def __init__(self, height, bucket_size=8, block_size=4096, s_num=12, a_num=8):
         super().__init__(height, bucket_size=bucket_size + s_num, block_size=block_size)
         self.dummy_blocks = [dummy_block(self.block_size) for _ in range(self.height)]
@@ -57,11 +60,13 @@ class Ring_ORAM(BTree):
         self.bucket_size = bucket_size
 
         self.stash = {}
-        self.position_map = {}
-        self.address_map = {}  # -1 denotes un-accessed blocks, 0 denotes accessed blocks, 1 denotes un-accessed dummy
+        self.position_map = np.full((2 ** (self.height - 1) * self.bucket_size,), -1, dtype=int)
+        # -1 denotes un-accessed blocks, 0 denotes accessed blocks, 1 denotes un-accessed dummy
+        self.address_map = np.full((2 ** self.height - 1, self.bucket_size + self.s_num), -1, dtype=int)
+        self.address_map[:, self.bucket_size:] = 1
         self.round = 0
         self.big_g = 0  # constant G in the paper
-        self.count = {}  # record the number of accesses
+        self.count = np.zeros(2 ** self.height - 1, dtype=int)  # record the number of accesses
 
         # Record map metadata
         self.read_buckets = []
@@ -69,21 +74,6 @@ class Ring_ORAM(BTree):
 
         # For evaluate
         self.info = AccessInfo()
-
-        self.build_position_map()
-
-    def build_position_map(self):
-        for id in range(2 ** (self.height - 1) * self.a_num):
-            address = urandom(16).hex()
-            self.position_map[address] = -1
-
-        for position in range(2 ** self.height - 1):
-            self.address_map[position] = [-1] * (self.bucket_size + self.s_num)
-            self.count[position] = 0
-
-            # Directly set the validation of dummies to 1
-            for i in range(self.s_num):
-                self.address_map[position][i + self.bucket_size] = 1
 
     def evict_path(self):
         l = super().g_to_l(self.big_g)
@@ -254,7 +244,7 @@ if __name__ == '__main__':
     for i in range(2 ** test_factor):
         if random() < 0.5:
 
-            address = choice(list(p_map.keys()))
+            address = randint(0, len(p_map) - 1)
             data = dummy_block(4096)
             ring_oram.access('write', address, data)
             real_datasets[address] = data

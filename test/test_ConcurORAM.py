@@ -32,7 +32,7 @@ class TestConcurORAM(unittest.TestCase):
             batch_requests = []
             while len(batch_requests) < self.c_batch:
                 if random.random() < 0.5:
-                    address = random.choice(list(self.p_map.keys()))
+                    address = random.randint(0, len(self.p_map) - 1)
                     data = urandom(4096)
                     self.real_datasets[address] = data
                     batch_requests.append(('write', address, data))

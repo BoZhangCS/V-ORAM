@@ -5,7 +5,7 @@ parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(parent_dir)
 
 import unittest
-from random import random, choice
+from random import random, choice, randint
 from src.V_ORAM import V_ORAM
 from src.BTree import dummy_block
 from os import urandom
@@ -39,7 +39,7 @@ class Test_Ring_Concur(unittest.TestCase):
             if sid != 'concur':
                 for i in range(self.repeat):
                     if random() < 0.5:
-                        address = choice(list(self.v_oram.curr_ORAM.position_map.keys()))
+                        address = randint(0, len(p_map) - 1)
                         data = urandom(4096)
                         self.v_oram.access('write', address, data, sid)
                         real_datasets[address] = data
@@ -59,7 +59,7 @@ class Test_Ring_Concur(unittest.TestCase):
                 test_num = self.repeat
                 for i in range(test_num):
                     if random() < 0.5:
-                        address = choice(list(p_map.keys()))
+                        address = randint(0, len(p_map) - 1)
                         data = dummy_block()
                         real_datasets[address] = data
                         batch_requests.append(('write', address, data))

@@ -28,7 +28,7 @@ class TestRingORAM(unittest.TestCase):
         # print(self.path_oram.stash.keys())
         for i in range(self.repeat):
             if random.random() < 0.5:
-                address = random.choice(list(self.ring_oram.position_map.keys()))
+                address = random.randint(0, len(self.ring_oram.position_map) - 1)
                 data = urandom(4096)
                 self.ring_oram.access('write', address, data)
                 self.real_datasets[address] = data

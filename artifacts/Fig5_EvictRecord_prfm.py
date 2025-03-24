@@ -17,7 +17,7 @@ from tqdm import tqdm
 from os import urandom
 from typing import List
 from copy import deepcopy
-from random import random, choice
+from random import random, choice, randint
 from matplotlib import pyplot as plt, rcParams
 
 from config import default_para as config
@@ -83,7 +83,7 @@ def runVORAM(height, **input_config):
         for i in range(access_num):
             if sid != 'concur':
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = urandom(block_size)
                     _, info = v_oram.access('write', address, data, sid)
                     real_datasets[address] = data
@@ -111,7 +111,7 @@ def runVORAM(height, **input_config):
             else:
                 # Concur is measured by c_batch ** 2 access average
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = urandom(block_size)
                     real_datasets[address] = data
                     batch_requests.append(('write', address, data))
@@ -235,7 +235,7 @@ def runORAM(ORAM_type, height=10, detail=False, **config):
 
         for i in range(test_interval):
             if random() < 0.5:
-                address = choice(list(p_map.keys()))
+                address = randint(0, len(p_map) - 1)
                 data = urandom(block_size)
                 _, _, _, info = oram.access('write', address, data)
                 real_datasets[address] = data
@@ -261,7 +261,7 @@ def runORAM(ORAM_type, height=10, detail=False, **config):
             batch_requests = []
             while len(batch_requests) < c_batch:
                 if random() < 0.5:
-                    address = choice(list(p_map.keys()))
+                    address = randint(0, len(p_map) - 1)
                     data = urandom(block_size)
                     real_datasets[address] = data
                     batch_requests.append(('write', address, data))

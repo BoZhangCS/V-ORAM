@@ -3,6 +3,9 @@ import os.path
 import pickle
 from math import floor, ceil
 from os import urandom
+
+import numpy as np
+
 from config import default_para as config
 
 BLOCK_SIZE = config['block_size']
@@ -72,7 +75,7 @@ class BTree:
         self.address_size = address_size if address_size else 32  # in bits
         self.block_size = block_size if block_size else 4 * 1024  # in bytes
         self.bucket_size = bucket_size if bucket_size else 4  # in blocks
-        self.layers = []
+        self.layers = np.empty((self.height,), dtype=object)
         self.init()
 
     def init(self):
@@ -91,7 +94,7 @@ class BTree:
             for j in range(2 ** i):
                 tmp.append(
                     Bucket(size=self.bucket_size, bucket_id=2 ** i - 1 + j, block_size=self.block_size))
-            self.layers.append(tmp)
+            self.layers[i] = np.array(tmp, dtype=object)
 
     def print(self):
         for i in range(len(self.layers)):

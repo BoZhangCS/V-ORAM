@@ -4,6 +4,8 @@ from math import ceil, log2
 from typing import List
 from os import urandom
 
+import numpy as np
+
 from src.AccessInfo import AccessInfo
 from src.BTree import BTree, dummy_block, _data_str
 
@@ -89,19 +91,22 @@ class ConcurORAM(BTree):
         print_meta():
             Prints the metadata of the ORAM.
         """
-    def __init__(self, height, bucket_size=8, block_size=4096, c_batch=4, maxStashSize=62, a_num=8, s_num=4,
+
+    def __init__(self, height, bucket_size=8, block_size=4096, c_batch=8, maxStashSize=62, a_num=8, s_num=12,
                  no_map=False):
         super().__init__(height, bucket_size=bucket_size + s_num, block_size=block_size)
         self.union_size = 0
         self.no_map = no_map
         self.s_num = s_num
         self.a_num = a_num
-        self.count = {}
+        self.bucket_size = bucket_size
+
         self.dummy_blocks = [dummy_block(self.block_size) for _ in range(self.height)]
         self.leaf_num = 2 ** (self.height - 1)
-        self.position_map = {}  # position map, address to leaf index
-        self.address_map = {}  # bucket position to address list
-        self.bucket_size = bucket_size
+        self.position_map = np.full((2 ** self.height - 1) * self.a_num * 3 // 4, -1, dtype=int)
+        self.address_map = np.full((2 ** self.height - 1, self.bucket_size + self.s_num), -1, dtype=int)
+        self.address_map[:, self.bucket_size:] = 1
+        self.count = np.zeros(2 ** self.height - 1, dtype=int)
 
         self.c_batch = c_batch
         self.maxStashSize = maxStashSize
@@ -124,7 +129,6 @@ class ConcurORAM(BTree):
         self.tempStashSet: List[list] = [[] for _ in range(self.c_batch)]
 
         self.init_logs()
-        self.build_position_map()
 
         # For evaluation
         self.info = AccessInfo()
@@ -134,7 +138,7 @@ class ConcurORAM(BTree):
             tmp_stash = []
             self.stash_valid.append([True for _ in range(self.maxStashSize + self.c_batch)])
             for j in range(self.maxStashSize + self.c_batch):
-                tmp_stash.append((urandom(16).hex(), dummy_block(self.block_size)))
+                tmp_stash.append((self.get_dummy_address(), dummy_block(self.block_size)))
             self.StashSet.append(tmp_stash)
         self.tempStashSet = deepcopy(self.StashSet)
 
@@ -142,7 +146,7 @@ class ConcurORAM(BTree):
             tmp_DRL = []
             self.DRL_valid.append([True for _ in range(2 * self.c_batch)])
             for j in range(2 * self.c_batch):
-                tmp_DRL.append((urandom(16).hex(), dummy_block(self.block_size)))
+                tmp_DRL.append((self.get_dummy_address(), dummy_block(self.block_size)))
             self.DR_LogSet.append(tmp_DRL)
 
     def print(self):
@@ -159,19 +163,8 @@ class ConcurORAM(BTree):
             print('\n')
         print()
 
-    def build_position_map(self):
-        if not self.no_map:
-            for id in range((2 ** self.height - 1) * self.a_num * 3 // 4):
-                _address = urandom(16).hex()
-                self.position_map[_address] = -1
-
-            for position in range(2 ** self.height - 1):
-                self.address_map[position] = [-1] * (self.bucket_size + self.s_num)
-
-                # Directly set the validation of dummies to 1
-                for i in range(self.s_num):
-                    self.address_map[position][i + self.bucket_size] = 1
-        self.count = [0] * (2 ** self.height - 1)
+    def get_dummy_address(self):
+        return random.randint(0, len(self.position_map) - 1) + len(self.position_map)
 
     def read_log_set(self, address):
         current_id = ((self.round) // self.a_num) % self.c_batch
@@ -211,7 +204,7 @@ class ConcurORAM(BTree):
             if len(log_j_1) > self.c_batch:
                 raise Exception("Overflow in write_log_set")
             while len(log_j_1) < 2 * self.c_batch:
-                log_j_1.append((urandom(16).hex(), dummy_block(self.block_size)))
+                log_j_1.append((self.get_dummy_address(), dummy_block(self.block_size)))
 
             for jj in range(2 * self.c_batch):
                 self.DRL_valid[j][jj] = True
@@ -289,7 +282,7 @@ class ConcurORAM(BTree):
             raise Exception("Overflow in evict_to_path")
 
         while len(tempStash_i) < self.maxStashSize + self.c_batch:
-            tempStash_i.append((urandom(16).hex(), dummy_block(self.block_size)))
+            tempStash_i.append((self.get_dummy_address(), dummy_block(self.block_size)))
 
         self.tempStashSet[self.eviction_id] = deepcopy(tempStash_i)
 
@@ -315,11 +308,11 @@ class ConcurORAM(BTree):
         # Union the data from DRL and tempStash_i_1
         # curr_DRL has the up-t-date data
         for add, block in self.DR_LogSet[self.eviction_id]:
-            if add in self.position_map.keys():
+            if add < len(self.position_map):
                 union[add] = block
 
         for (address, block) in tempStash_i_1:
-            if (address in self.position_map.keys()) and (address not in union.keys()):
+            if (address < len(self.position_map)) and (address not in union.keys()):
                 union[address] = block
 
         for i in range(self.height):
@@ -379,13 +372,13 @@ class ConcurORAM(BTree):
                 self.DRL_valid[eviction_id][jj] = True
             self.evictionLog[eviction_id] = -1
 
-            self.DR_LogSet[idx] = [(urandom(16).hex(), dummy_block(self.block_size)) for _ in range(2 * self.c_batch)]
+            self.DR_LogSet[idx] = [(self.get_dummy_address(), dummy_block(self.block_size)) for _ in range(2 * self.c_batch)]
             self.StashSet[eviction_id] = deepcopy(self.tempStashSet[eviction_id])
 
             if idx == self.c_batch - 1:
                 self.curr_stash.clear()
                 for add, block in self.StashSet[idx]:
-                    if add in self.position_map.keys() and self.position_map[add] != -1:
+                    if add < len(self.position_map) and self.position_map[add] != -1:
                         self.curr_stash[add] = block
                 self.info.down_sync += (self.c_batch + self.maxStashSize) * self.block_size
 
@@ -406,9 +399,9 @@ class ConcurORAM(BTree):
                     break
             if not found_real:
                 found_dummy = False
-                for jj in range(self.bucket_size, self.bucket_size + self.s_num):
-                    if self.address_map[tmp_position][jj] == 1:
-                        self.address_map[tmp_position][jj] = 0
+                for kk in range(self.bucket_size, self.bucket_size + self.s_num):
+                    if self.address_map[tmp_position][kk] == 1:
+                        self.address_map[tmp_position][kk] = 0
                         found_dummy = True
                         break
                 if not found_dummy:
@@ -512,7 +505,7 @@ class ConcurORAM(BTree):
                 result_data = self.curr_DRL[self.op_address]
 
             if op == 'read' and result_data is None:
-                self.print_meta()
+                # self.print_meta()
                 raise Exception(f"Data not found, address: {self.op_address}")
 
             if op == 'write':
@@ -559,40 +552,40 @@ class ConcurORAM(BTree):
 
         return results, deepcopy(self.info)
 
-    def print_meta(self):
-        print(f'DR-logset:\t [')
-        current_eviction_id = self.big_g % self.c_batch
-        for i in range(self.c_batch):
-            if i == current_eviction_id:
-                print('>>', end='')
-            print(f'\t{i}:\t[', end='')
-            for add, block in self.DR_LogSet[i]:
-                if add in self.position_map.keys():
-                    print(f'{add}:{_data_str(block)}', end=', ')
-            print(']')
-        print(']')
-
-        print(f'StashSet:\t [')
-        for i in range(self.c_batch):
-            print(f'\t{i}:\t[', end='')
-            for add, block in self.StashSet[i]:
-                if add in self.position_map.keys():
-                    print(f'{add}:{_data_str(block)}', end=', ')
-            print(']')
-        print(']')
-
-        print('stash:\t[', end='')
-        for add, block in self.curr_stash.items():
-            print(f'{add}:{_data_str(block)}', end=', ')
-        print(']')
-
-        print('DRL:\t[', end='')
-        for add, block in self.curr_DRL.items():
-            print(f'{add}:{_data_str(block)}', end=', ')
-        print(']')
-
-        self.print()
-        print(f'=====================================')
+    # def print_meta(self):
+    #     print(f'DR-logset:\t [')
+    #     current_eviction_id = self.big_g % self.c_batch
+    #     for i in range(self.c_batch):
+    #         if i == current_eviction_id:
+    #             print('>>', end='')
+    #         print(f'\t{i}:\t[', end='')
+    #         for add, block in self.DR_LogSet[i]:
+    #             if add in self.position_map.keys():
+    #                 print(f'{add}:{_data_str(block)}', end=', ')
+    #         print(']')
+    #     print(']')
+    #
+    #     print(f'StashSet:\t [')
+    #     for i in range(self.c_batch):
+    #         print(f'\t{i}:\t[', end='')
+    #         for add, block in self.StashSet[i]:
+    #             if add in self.position_map.keys():
+    #                 print(f'{add}:{_data_str(block)}', end=', ')
+    #         print(']')
+    #     print(']')
+    #
+    #     print('stash:\t[', end='')
+    #     for add, block in self.curr_stash.items():
+    #         print(f'{add}:{_data_str(block)}', end=', ')
+    #     print(']')
+    #
+    #     print('DRL:\t[', end='')
+    #     for add, block in self.curr_DRL.items():
+    #         print(f'{add}:{_data_str(block)}', end=', ')
+    #     print(']')
+    #
+    #     self.print()
+    #     print(f'=====================================')
 
 
 if __name__ == "__main__":
@@ -614,7 +607,7 @@ if __name__ == "__main__":
         batch_requests = []
         while len(batch_requests) < c_batch:
             if random.random() < 0.5:
-                address = random.choice(list(p_map.keys()))
+                address = random.randint(0, len(p_map) - 1)
                 data = dummy_block(concur.block_size)
                 real_datasets[address] = data
                 batch_requests.append(('write', address, data))

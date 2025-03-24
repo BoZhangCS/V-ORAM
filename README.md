@@ -16,19 +16,19 @@ The implementation is open-sourced under the Apache v2 license ([Lisence](LICENS
 
 * [Installation](#installation)
 * [Figure 4](#figure-4) (<1 compute-minutes)
-* [Figure 5](#figure-5) (10 compute-minutes, 90 GB disk, 4 GB RAM)
-* [Figure 6](#figure-6) (5 compute-minutes, 90 GB disk, 5 GB RAM)
+* [Figure 5](#figure-5) (5 compute-minutes, 90 GB disk, 2 GB RAM)
+* [Figure 6](#figure-6) (5 compute-minutes, 90 GB disk, 2 GB RAM)
 * [Figure 7](#figure-7) (<1 compute-minutes)
 * [Figure 8](#figure-8) (<1 compute-minutes)
-* [Figure 9](#figure-9) (100 compute-minutes)
+* [Figure 9](#figure-9) (10 compute-minutes, 90 GB disk, 16 GB RAM)
 * [Figure 10](#figure-10) (<1 compute-minutes)
 * [Figure 11](#figure-11) (<1 compute-minutes)
 * [Table 3](#table-3) (<1 compute-minutes)
 
 Our experiment does not require specialized cloud servers and can be evaluated on-premises. V-ORAM will generate storage
 files to store the data of the binary tree, so please ensure your computer has at least **90 GB** of free storage. 
-The RAM usage is roughly estimated using the Activity Monitor that comes with macOS. 
-We recommend equip the machine with at least **32 GB** of RAM to prevent the system from automatically killing processes.
+The RAM usage is roughly estimated based on the RAM usage of the Python process in the Activity Monitor built-in macOS. 
+We recommend equip the machine with at least **16 GB** of RAM to prevent the system from automatically killing processes. (Our machine is macOS Sequoia 15.3.2, with 512 GB storage, and 16 GB RAM).
 
 The entire artifact evaluation takes about **20 min** for installation and **2 hr** for computation.
 
